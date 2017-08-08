@@ -1,6 +1,6 @@
 module.exports = {
   loadPriority: 1000,
-  initialize: function(api, next) {
+  initialize: function (api, next) {
     var config = api.config;
     var actions = api.actions.actions;
 
@@ -21,7 +21,7 @@ module.exports = {
       serverPort = config.swagger.portOverride;
     }
 
-    var buildPath = function(route, action, parameters, tags) {
+    var buildPath = function (route, action, parameters, tags) {
       var operationId = route ? route.action : action.name;
       var info = {
         summary: action.summary || '',
@@ -32,7 +32,7 @@ module.exports = {
       };
       if (action.responseSchemas && typeof action.responseSchemas !== 'undefined') {
         // TODO: We'll assign the whole thing, but there are swagger bugs/limitations with inline
-        // schemas so we'll have to think of an elegant way to reference schemas instead if we 
+        // schemas so we'll have to think of an elegant way to reference schemas instead if we
         // want to demonstrate multiple types of responses e.g. 300's, 400's, etc.
         info.responses = action.responseSchemas;
       }
@@ -47,13 +47,31 @@ module.exports = {
           description: config.general.welcomeMessage,
           version: "" + config.general.apiVersion
         },
-
+        responseSchemas: {
+          '200': {
+            description: 'Sample response',
+            schema: {
+              type: 'object',
+              properties: {
+                'swagger': {
+                  type: 'string',
+                  example: 'Swagger 2.0'
+                }
+              }
+            }
+          }
+        },
+        inputs: {
+          secure: {
+            required: false
+          }
+        },
         host: config.swagger.baseUrl || (serverIp + ':' + serverPort),
         //actionPath: '/' + (actionUrl || 'swagger'),
         basePath: '/' + (actionUrl || 'swagger'),
-        schemes: [ 'http' ],
-        consumes: [ 'application/json', 'multipart/form-data' ],
-        produces: [ 'application/json' ],
+        schemes: ['http'],
+        consumes: ['application/json', 'multipart/form-data'],
+        produces: ['application/json'],
         paths: {},
         definitions: {},
         parameters: {
@@ -65,11 +83,11 @@ module.exports = {
           }
         }
       },
-      build: function() {
+      build: function () {
         var verbs = api.routes.verbs;
 
-        for ( var actionName in actions) {
-          for ( var version in actions[actionName]) {
+        for (var actionName in actions) {
+          for (var version in actions[actionName]) {
 
             var action = actions[actionName][version];
             var parameters = [];
@@ -87,7 +105,7 @@ module.exports = {
 
             // TODO: Should leverage some stuff done below.
 
-            for ( var key in action.inputs) {
+            for (var key in action.inputs) {
               if (key == 'required' || key == 'optional') {
                 continue;
               }
@@ -115,7 +133,7 @@ module.exports = {
               definition.required = required;
             }
 
-            for ( var key in action.headers) {
+            for (var key in action.headers) {
               var input = action.headers[key];
               api.swagger.documentation.parameters['action_' + action.name + version + "_" + key] = {
                 name: key,
@@ -162,7 +180,7 @@ module.exports = {
               var method = verbs[k];
 
               var params = [];
-              parameters.forEach(function(p) {
+              parameters.forEach(function (p) {
                 params.push(p);
               });
 
@@ -199,7 +217,7 @@ module.exports = {
         }
 
         if (config.routes && config.swagger.documentConfigRoutes !== false) {
-          for ( var method in config.routes) {
+          for (var method in config.routes) {
             var routes = config.routes[method];
             for (var l = 0, len1 = routes.length; l < len1; l++) {
               var route = routes[l];
@@ -214,15 +232,15 @@ module.exports = {
                 continue;
 
               var actionByVersion = actions[route.action];
-              for ( var version in actionByVersion) {
+              for (var version in actionByVersion) {
 
                 var action = actionByVersion[version];
                 var parameters = [];
                 var required = [];
 
                 var tags = action.tags || [];
-                for ( var i in config.swagger.routeTags) {
-                  for ( var r in config.swagger.routeTags[i]) {
+                for (var i in config.swagger.routeTags) {
+                  for (var r in config.swagger.routeTags[i]) {
                     if (route.path.indexOf(config.swagger.routeTags[i][r]) > 0) {
                       tags.push(i);
                       break;
@@ -239,7 +257,7 @@ module.exports = {
 
                 var params = {};
 
-                var path = route.path.replace(/\/:([\w]*)/g, function(match, p1) {
+                var path = route.path.replace(/\/:([\w]*)/g, function (match, p1) {
                   if (p1 === 'apiVersion') {
                     return '/' + version;
                   }
@@ -265,7 +283,7 @@ module.exports = {
                   api.swagger.documentation.paths["" + path] = {};
                 }
 
-                for ( var key in action.inputs) {
+                for (var key in action.inputs) {
                   if (key == 'required' || key == 'optional') {
                     continue;
                   }
@@ -276,7 +294,7 @@ module.exports = {
 
                   var paramType = input.paramType || (params[key] ? 'path' : 'query');
                   var paramStr = route.action + version + "_" + paramType + "_" + key;
-		  if(input.paramType!='body'){  
+                  if (input.paramType != 'body') {
                     api.swagger.documentation.parameters[paramStr] = {
                       name: key,
                       "in": input.paramType || (params[key] ? 'path' : 'query'),
@@ -294,14 +312,14 @@ module.exports = {
                     if (input.required) {
                       required.push(key);
                     }
-		  }
+                  }
                 }
 
                 if (required.length > 0) {
                   definition.required = required;
                 }
 
-                for ( var key in action.headers) {
+                for (var key in action.headers) {
                   var input = action.headers[key];
                   api.swagger.documentation.parameters[route.action + version + "_" + key] = {
                     name: key,
@@ -375,7 +393,7 @@ module.exports = {
     next();
   },
 
-  start: function(api, next) {
+  start: function (api, next) {
     api.swagger.build();
     next();
   }
